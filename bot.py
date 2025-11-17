@@ -8,6 +8,46 @@ from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
 )
+import json
+import time
+import hashlib
+import asyncio
+
+# Replace these with your Telegram numeric user IDs (admins)
+ADMINS = [6047187036]   # <-- yahan apna ID daalo (from @userinfobot)
+
+FILES_JSON = "files.json"
+
+def load_index():
+    try:
+        with open(FILES_JSON, "r") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+def save_index_sync(index):
+    with open(FILES_JSON, "w") as f:
+        json.dump(index, f)
+
+async def save_index(index):
+    await asyncio.to_thread(save_index_sync, index)
+
+def make_slug(title: str) -> str:
+    s = (title or "file").lower().strip().replace(" ", "_")
+    return s + "_" + hashlib.md5((s + str(time.time())).encode()).hexdigest()[:6]
+
+async def index_pdf(context, title: str, file_id: str, uploader_id: int):
+    index = context.bot_data.setdefault("files", {})
+    slug = make_slug(title)
+    index[slug] = {
+        "file_id": file_id,
+        "title": title,
+        "type": "pdf",
+        "uploader": uploader_id,
+        "time": int(time.time())
+    }
+    await save_index(index)
+    return slug
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
