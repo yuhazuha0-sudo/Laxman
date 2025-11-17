@@ -13,6 +13,9 @@ import time
 import hashlib
 import asyncio
 
+import logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+logger = logging.getLogger(__name__)
 # Replace these with your Telegram numeric user IDs (admins)
 ADMINS = [6047187036]   # <-- yahan apna ID daalo (from @userinfobot)
 
@@ -176,6 +179,13 @@ app.add_handler(InlineQueryHandler(inline_query_handler))
     app.add_handler(MessageHandler(filters.PHOTO & ~filters.COMMAND, photo_handler))
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_error_handler(error_handler)
+from telegram.ext import MessageHandler
+
+async def _debug_all_updates(update, context):
+    logger.info("RECEIVED UPDATE: %s", update)
+
+# add this temporarily
+app.add_handler(MessageHandler(filters.ALL, _debug_all_updates))
 
     print("Bot running…")
     app.run_polling()
