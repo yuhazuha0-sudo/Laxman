@@ -163,6 +163,12 @@ def main():
     app = ApplicationBuilder().token(token).build()
     app.bot_data["files"] = load_index()
 
+
+    app.bot_data["files"] = load_index()
+app.add_handler(CommandHandler("find", find_cmd))
+app.add_handler(CommandHandler("get", get_cmd))
+app.add_handler(InlineQueryHandler(inline_query_handler))
+    
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("convert", convert_cmd))
     app.add_handler(CommandHandler("cancel", cancel))
