@@ -121,6 +121,7 @@ def main():
         return
 
     app = ApplicationBuilder().token(token).build()
+    app.bot_data["files"] = load_index()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("convert", convert_cmd))
