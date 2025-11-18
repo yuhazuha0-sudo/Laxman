@@ -186,13 +186,14 @@ async def find_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     index = context.bot_data.get("files", {})
     results = []
     for slug, meta in index.items():
-        if q in meta.get("title","").lower() or q in slug:
+        if q in meta.get("title", "").lower() or q in slug:
             results.append((slug, meta))
     if not results:
         await update.message.reply_text("Kuch nahi mila.")
         return
-    text = "Search results:\n" + "\n".join([f"{s} — {m.get('title')}" for s,m in results[:20]])
+    text = "Search results:\n" + "\n".join([f"{s} — {m.get('title')}" for s, m in results[:20]])
     await update.message.reply_text(text)
+
 
 async def get_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     args = context.args
@@ -207,38 +208,12 @@ async def get_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     try:
         file_id = meta.get("file_id")
+        # send by file_id directly
         await update.message.reply_document(document=file_id, filename=f"{slug}.pdf")
     except Exception as e:
-        logger.exception("Failed to send fileADMINS = [6047187036]
-
-FILES_JSON = "files.json"
-MAX_IMAGES = 25  # safety limit per session
-
-def load_index():
-    try:
-        with open(FILES_JSON, "r") as f:
-            return json.load(f)
-    except Exception:
-        return {}
-
-def save_index_sync(index):
-    with open(FILES_JSON, "w") as f:
-        json.dump(index, f)
-
-async def save_index(index):
-    await asyncio.to_thread(save_index_sync, index)
-
-def make_slug(title: str) -> str:
-    s = (title or "file").lower().strip().replace(" ", "_")
-    return s + "_" + hashlib.md5((s + str(time.time())).encode()).hexdigest()[:6]
-
-async def index_pdf(context, title: str, file_id: str, uploader_id: int):
-    index = context.bot_data.setdefault("files", {})
-    slug = make_slug(title)
-    index[slug] = {
-        "file_id": file_id,
-        "title": title,
-        "type": "pdf",
+        # fixed: proper logging and reply
+        logger.exception("Failed to send file: %s", e)
+        await update.message.reply_text("Failed to send file.")        "type": "pdf",
         "uploader": uploader_id,
         "time": int(time.time())
     }
