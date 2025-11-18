@@ -1,0 +1,16 @@
+# Telegram PDF bot stored index
+files.json
+
+# Python bytecode cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environment folders
+venv/
+env/
+
+# Temporary files
+*.log
+*.tmp
+*.temp
