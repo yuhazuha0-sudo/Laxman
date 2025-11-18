@@ -74,7 +74,7 @@ def main():
     app.run_polling()
 
 if __name__ == "__main__":
-    main()logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    main
 logger = logging.getLogger(__name__)
 
 # Edit this to your numeric Telegram user id(s)
