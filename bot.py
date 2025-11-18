@@ -1,40 +1,80 @@
-# bot.py — Final cleaned Image->PDF bot (PTB v20+)
+# bot.py - minimal Image->PDF bot using python-telegram-bot v20.x
 import os
 import tempfile
 from pathlib import Path
 import img2pdf
-import json
-import time
-import hashlib
-import asyncio
-import uuid
-import logging
-import requests
 import shutil
-from urllib.parse import urlparse
+import logging
 
 from PIL import Image
+from telegram import InputFile, Update
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 
-from telegram import (
-    Update,
-    InputFile,
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
-    InlineQueryResultArticle,
-    InputTextMessageContent,
-)
-from telegram.ext import (
-    ApplicationBuilder,
-    CommandHandler,
-    MessageHandler,
-    CallbackQueryHandler,
-    InlineQueryHandler,
-    ContextTypes,
-    filters,
-)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# ---------- Configuration ----------
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+MAX_IMAGES = 20
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Namaste! Images bhejo, main unko PDF bana kar bhej dunga.")
+
+def ensure_jpg(path: Path):
+    # ensure file is JPG (convert PNG etc to JPEG) to make img2pdf happy
+    try:
+        with Image.open(path) as im:
+            rgb = im.convert("RGB")
+            rgb.save(path, "JPEG", quality=85)
+        return True
+    except Exception as e:
+        logger.exception("Image convert failed: %s", e)
+        return False
+
+async def photo_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message or not update.message.photo:
+        return
+    # For simplicity: accept only one image per message and convert immediately
+    photo = update.message.photo[-1]
+    tmpdir = tempfile.mkdtemp(prefix="bot_img2pdf_")
+    try:
+        dest = Path(tmpdir) / "image.jpg"
+        tf = await context.bot.get_file(photo.file_id)
+        await tf.download_to_drive(custom_path=str(dest))
+        # convert to jpeg if needed
+        if not ensure_jpg(dest):
+            await update.message.reply_text("Image process nahi ho payi. Ek aur try karo.")
+            return
+        pdf_path = Path(tmpdir) / "out.pdf"
+        with open(pdf_path, "wb") as f:
+            f.write(img2pdf.convert([str(dest)]))
+        # send pdf
+        await update.message.reply_document(document=InputFile(str(pdf_path)), filename="converted.pdf")
+    except Exception as e:
+        logger.exception("Error in photo_handler: %s", e)
+        await update.message.reply_text("Kuch gadbad hogayi. Dobara try karo.")
+    finally:
+        try:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+        except Exception:
+            pass
+
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
+    logger.exception("Update caused error: %s", context.error)
+
+def main():
+    token = os.environ.get("BOT_TOKEN")
+    if not token:
+        print("BOT_TOKEN missing in environment — set it and restart.")
+        return
+
+    app = ApplicationBuilder().token(token).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.PHOTO & ~filters.COMMAND, photo_handler))
+    app.add_error_handler(error_handler)
+    logger.info("Bot starting (polling)...")
+    app.run_polling()
+
+if __name__ == "__main__":
+    main()logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
 # Edit this to your numeric Telegram user id(s)
