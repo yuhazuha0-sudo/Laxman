@@ -1250,7 +1250,6 @@ async def get_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Failed to send file.")        "type": "pdf",
         "uploader": uploader_id,
         "time": int(time.time())
-    }
     await save_index(index)
     return slug
 
